@@ -1,3 +1,5 @@
+import os
+os.system("pip install pytz")
 import logging
 import os
 import pytz
@@ -107,3 +109,4 @@ if __name__ == "__main__":
 
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))).start()
     application.run_polling()
+
