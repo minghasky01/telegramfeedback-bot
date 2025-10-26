@@ -1,12 +1,5 @@
 services:
   - type: web
     name: telegramfeedback-bot
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python bot.py"
-    region: singapore
-    envVars:
-      - key: BOT_TOKEN
-        sync: false
-      - key: GOOGLE_SHEET_NAME
-        value: "Telegram 回報系統 (每週報告版)"
+    env: docker
+    plan: free
