@@ -1,10 +1,20 @@
 services:
-  - type: web
-    name: telegram-feedback-bot
-    env: python
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-    startCommand: python3 bot.py
-    plan: free
-    autoDeploy: true
+  - type: web                     # 類型是 web（因為你有 bot + webhook）
+    name: telegramfeedback-bot    # 你的服務名稱（可自由修改）
+    env: python                   # 指定 Python 環境，這是重點！
+
+    # 🧱 建構階段（安裝依賴）
+    buildCommand: "pip install -r requirements.txt"
+
+    # 🚀 啟動指令（運行你的主程式）
+    startCommand: "python bot.py"
+
+    # 🌏 選擇伺服器地區（可省略或改成別的）
+    region: singapore
+
+    # 📦 環境變數（可放你的 TOKEN、SHEET_ID 等）
+    envVars:
+      - key: TELEGRAM_TOKEN
+        sync: false
+      - key: GOOGLE_SHEET_KEY
+        sync: false
