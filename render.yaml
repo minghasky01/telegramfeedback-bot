@@ -2,9 +2,9 @@ services:
   - type: worker
     name: telegram-feedback-bot
     env: python
+    plan: free
     buildCommand: |
       pip install --upgrade pip
-      pip install -r requirements.txt
+      python3 -m pip install -r requirements.txt
     startCommand: |
-      python -m bot
-    plan: free
+      python3 -c "import sys; print('🧠 sys.path =', sys.path); import pytz; print('✅ pytz OK'); import bot"
