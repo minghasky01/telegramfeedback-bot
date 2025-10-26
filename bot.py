@@ -1,12 +1,11 @@
-import os
-os.system("pip install pytz")
 import logging
 import os
+import json
 import pytz
 import gspread
 from datetime import datetime
-from oauth2client.service_account import ServiceAccountCredentials
-from telegram import Update, ReplyKeyboardMarkup
+from google.oauth2.service_account import Credentials
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -17,12 +16,14 @@ from telegram.ext import (
 )
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
+import threading
 
 # ======================
 # 基本設定
 # ======================
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
@@ -32,23 +33,16 @@ SHEET_NAME = "Telegram 回報系統 (每週報告版)"
 # ======================
 # Google Sheets 連線
 # ======================
-SCOPES = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-import json
-import os
-from io import StringIO
-from oauth2client.service_account import ServiceAccountCredentials
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
-# 使用 Render 環境變數中的 JSON 憑證
 google_creds_str = os.getenv("GOOGLE_CREDENTIALS_JSON")
-
 if not google_creds_str:
     raise ValueError("❌ 缺少 GOOGLE_CREDENTIALS_JSON，請在 Render 的 Environment 設定中加入。")
 
-creds_dict = json.load(StringIO(google_creds_str))
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPES)
-client = gspread.authorize(creds)
-
 try:
+    creds_dict = json.loads(google_creds_str)
+    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+    client = gspread.authorize(creds)
     sheet = client.open(SHEET_NAME).worksheet("回報紀錄")
     logger.info(f"✅ 已找到試算表: {SHEET_NAME}")
 except gspread.exceptions.WorksheetNotFound:
@@ -57,6 +51,9 @@ except gspread.exceptions.WorksheetNotFound:
     sheet = spreadsheet.add_worksheet(title="回報紀錄", rows="1000", cols="20")
     sheet.append_row(["時間", "用戶", "回報內容"])
     logger.info("✅ 已建立新的工作表。")
+except Exception as e:
+    logger.error(f"❌ Google Sheets 初始化失敗: {e}")
+    raise
 
 # ======================
 # Telegram Bot 功能
@@ -84,8 +81,6 @@ async def cancel(update: Update, context: CallbackContext):
 # ======================
 def send_weekly_report():
     logger.info("🕒 產生每週報告中...")
-    # 這裡可以加入自動彙整報告的邏輯
-    # 例如抓本週的回報數、寄出摘要等
     logger.info("✅ 每週報告執行完成")
 
 # ======================
@@ -116,10 +111,6 @@ if __name__ == "__main__":
 
     logger.info("🤖 Bot running... weekly report every Monday 09:00 (Asia/Taipei)")
 
-    # 同時執行 Flask（for Render）與 Telegram Bot
-    import threading
-
+    # 同時啟動 Flask + Telegram Bot
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))).start()
     application.run_polling()
-
-
