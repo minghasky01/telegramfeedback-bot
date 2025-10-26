@@ -1,10 +1,10 @@
 services:
-  - type: worker
+  - type: web
     name: telegram-feedback-bot
     env: python
-    plan: free
     buildCommand: |
       pip install --upgrade pip
-      python3 -m pip install -r requirements.txt
-    startCommand: |
-      python3 -c "import sys; print('🧠 sys.path =', sys.path); import pytz; print('✅ pytz OK'); import bot"
+      pip install -r requirements.txt
+    startCommand: python3 bot.py
+    plan: free
+    autoDeploy: true
