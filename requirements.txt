@@ -1,6 +1,8 @@
-python-telegram-bot==20.6
-gspread
-google-auth
-google-api-python-client
-schedule
-pytz
+python-telegram-bot==20.8
+gspread==6.1.2
+google-auth==2.41.1
+google-auth-oauthlib==1.2.2
+google-api-python-client==2.153.0
+oauth2client==4.1.3
+pytz==2024.1
+schedule==1.2.1
