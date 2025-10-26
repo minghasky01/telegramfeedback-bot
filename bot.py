@@ -33,7 +33,19 @@ SHEET_NAME = "Telegram 回報系統 (每週報告版)"
 # Google Sheets 連線
 # ======================
 SCOPES = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", SCOPES)
+import json
+import os
+from io import StringIO
+from oauth2client.service_account import ServiceAccountCredentials
+
+# 使用 Render 環境變數中的 JSON 憑證
+google_creds_str = os.getenv("GOOGLE_CREDENTIALS_JSON")
+
+if not google_creds_str:
+    raise ValueError("❌ 缺少 GOOGLE_CREDENTIALS_JSON，請在 Render 的 Environment 設定中加入。")
+
+creds_dict = json.load(StringIO(google_creds_str))
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, SCOPES)
 client = gspread.authorize(creds)
 
 try:
@@ -109,4 +121,5 @@ if __name__ == "__main__":
 
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))).start()
     application.run_polling()
+
 
