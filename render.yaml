@@ -1,6 +1,9 @@
 services:
-  - type: web
-    name: telegramfeedback-bot
+  - type: worker
+    name: telegram-feedback-bot
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python3 bot.py"
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: python3 bot.py
+    plan: free
