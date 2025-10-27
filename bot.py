@@ -39,12 +39,16 @@ google_creds_str = os.getenv("GOOGLE_CREDENTIALS_JSON")
 if not google_creds_str:
     raise ValueError("❌ 缺少 GOOGLE_CREDENTIALS_JSON，請在 Render 的 Environment 設定中加入。")
 
-# 🔧 自動修正 Render 環境變數的換行問題
+# 🔧 修正 Render 的環境變數格式問題（避免 \n 被吃掉）
 google_creds_str = google_creds_str.replace('\\n', '\n')
 
+# 建立憑證並連線
 creds_dict = json.loads(google_creds_str)
 creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
 client = gspread.authorize(creds)
+
+# 嘗試開啟試算表
+try:
     sheet = client.open(SHEET_NAME).worksheet("回報紀錄")
     logger.info(f"✅ 已找到試算表: {SHEET_NAME}")
 except gspread.exceptions.WorksheetNotFound:
@@ -70,7 +74,7 @@ async def get_feedback(update: Update, context: CallbackContext):
     feedback = update.message.text
     user = update.message.from_user
     timestamp = datetime.now(pytz.timezone("Asia/Taipei")).strftime("%Y-%m-%d %H:%M:%S")
-    sheet.append_row([timestamp, user.username, feedback])
+    sheet.append_row([timestamp, user.username or user.first_name, feedback])
     await update.message.reply_text("✅ 已收到您的回報，感謝！")
     return ConversationHandler.END
 
@@ -83,6 +87,7 @@ async def cancel(update: Update, context: CallbackContext):
 # ======================
 def send_weekly_report():
     logger.info("🕒 產生每週報告中...")
+    # 這裡可以放彙整邏輯（例如寄信或統計）
     logger.info("✅ 每週報告執行完成")
 
 # ======================
@@ -98,10 +103,12 @@ def home():
 # 主程序入口
 # ======================
 if __name__ == "__main__":
+    # 啟動排程器
     scheduler = BackgroundScheduler(timezone="Asia/Taipei")
     scheduler.add_job(send_weekly_report, "cron", day_of_week="mon", hour=9, minute=0)
     scheduler.start()
 
+    # 建立 Telegram Bot
     application = ApplicationBuilder().token(TOKEN).build()
 
     conv_handler = ConversationHandler(
@@ -116,4 +123,3 @@ if __name__ == "__main__":
     # 同時啟動 Flask + Telegram Bot
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))).start()
     application.run_polling()
-
