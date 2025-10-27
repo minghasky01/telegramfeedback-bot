@@ -39,10 +39,12 @@ google_creds_str = os.getenv("GOOGLE_CREDENTIALS_JSON")
 if not google_creds_str:
     raise ValueError("❌ 缺少 GOOGLE_CREDENTIALS_JSON，請在 Render 的 Environment 設定中加入。")
 
-try:
-    creds_dict = json.loads(google_creds_str)
-    creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-    client = gspread.authorize(creds)
+# 🔧 自動修正 Render 環境變數的換行問題
+google_creds_str = google_creds_str.replace('\\n', '\n')
+
+creds_dict = json.loads(google_creds_str)
+creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+client = gspread.authorize(creds)
     sheet = client.open(SHEET_NAME).worksheet("回報紀錄")
     logger.info(f"✅ 已找到試算表: {SHEET_NAME}")
 except gspread.exceptions.WorksheetNotFound:
@@ -114,3 +116,4 @@ if __name__ == "__main__":
     # 同時啟動 Flask + Telegram Bot
     threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))).start()
     application.run_polling()
+
